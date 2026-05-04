@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>测测你的动物人格</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Noto+Serif+SC:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ivory: #f5f0e8;
+    --ink: #1a1714;
+    --warm-gray: #8c8680;
+    --accent: #b8956a;
+    --light-line: #ddd8cf;
+  }
+
+  body {
+    background: var(--ivory);
+    color: var(--ink);
+    font-family: 'Noto Serif SC', serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    overflow-x: hidden;
+  }
+
+  .grain {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  }
+
+  .container { max-width: 560px; width: 100%; position: relative; }
+
+  #intro { text-align: center; animation: fadeUp 1s ease both; }
+
+  .logo-line {
+    width: 1px; height: 60px;
+    background: var(--accent);
+    margin: 0 auto 2.5rem;
+    animation: growLine 1.2s ease both 0.2s;
+    transform-origin: top;
+  }
+
+  @keyframes growLine {
+    from { transform: scaleY(0); opacity: 0; }
+    to { transform: scaleY(1); opacity: 1; }
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.2rem, 6vw, 3rem);
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+  }
+
+  h1 em { font-style: italic; color: var(--accent); }
+
+  .subtitle {
+    font-size: 0.8rem;
+    letter-spacing: 0.25em;
+    color: var(--warm-gray);
+    margin-bottom: 3rem;
+    text-transform: uppercase;
+  }
+
+  .intro-desc {
+    font-size: 0.95rem;
+    line-height: 1.9;
+    color: var(--warm-gray);
+    margin-bottom: 3rem;
+    font-weight: 300;
+  }
+
+  .btn-start {
+    display: inline-block;
+    border: 1px solid var(--ink);
+    padding: 1rem 3rem;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.3em;
+    cursor: pointer;
+    background: transparent;
+    color: var(--ink);
+    transition: all 0.4s ease;
+    text-transform: uppercase;
+  }
+  .btn-start:hover { background: var(--ink); color: var(--ivory); }
+
+  #quiz { display: none; }
+
+  .progress-bar {
+    width: 100%; height: 1px;
+    background: var(--light-line);
+    margin-bottom: 3.5rem;
+    position: relative;
+  }
+  .progress-fill { height: 100%; background: var(--accent); transition: width 0.6s ease; width: 0%; }
+  .progress-label {
+    position: absolute; right: 0; top: 8px;
+    font-size: 0.7rem; letter-spacing: 0.2em; color: var(--warm-gray);
+  }
+
+  .question-block { animation: fadeUp 0.5s ease both; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-number {
+    font-size: 0.7rem; letter-spacing: 0.3em;
+    color: var(--accent); text-transform: uppercase; margin-bottom: 1.2rem;
+  }
+
+  .q-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.3rem, 4vw, 1.7rem);
+    font-weight: 300; line-height: 1.5; margin-bottom: 2.5rem;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 0.8rem; }
+
+  .option {
+    border: 1px solid var(--light-line);
+    padding: 1rem 1.4rem;
+    cursor: pointer; transition: all 0.3s ease;
+    font-size: 0.9rem; line-height: 1.6;
+    color: var(--ink); font-weight: 300;
+    text-align: left; background: transparent;
+    font-family: 'Noto Serif SC', serif;
+    position: relative; overflow: hidden;
+  }
+  .option::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--ink);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.35s ease; z-index: 0;
+  }
+  .option span { position: relative; z-index: 1; }
+  .option:hover { border-color: var(--ink); color: var(--ivory); }
+  .option:hover::before { transform: scaleX(1); }
+  .option.selected { border-color: var(--ink); background: var(--ink); color: var(--ivory); }
+  .option.selected::before { transform: scaleX(1); }
+
+  #result { display: none; text-align: center; }
+
+  .result-animal {
+    font-size: 5rem; margin-bottom: 1.5rem;
+    animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.5); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .result-type {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.8rem, 5vw, 2.4rem);
+    font-weight: 300; margin-bottom: 0.4rem; letter-spacing: 0.05em;
+  }
+
+  .result-tag {
+    font-size: 0.7rem; letter-spacing: 0.3em;
+    color: var(--accent); text-transform: uppercase; margin-bottom: 2.5rem;
+  }
+
+  .divider { width: 40px; height: 1px; background: var(--accent); margin: 0 auto 2rem; }
+
+  /* AI analysis block */
+  .ai-analysis {
+    border: 1px solid var(--light-line);
+    padding: 1.8rem;
+    margin-bottom: 2rem;
+    text-align: left;
+    position: relative;
+  }
+
+  .ai-label {
+    position: absolute;
+    top: -0.5rem; left: 1.2rem;
+    background: var(--ivory);
+    padding: 0 0.5rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .ai-text {
+    font-size: 0.9rem;
+    line-height: 2;
+    color: var(--ink);
+    font-weight: 300;
+    white-space: pre-wrap;
+  }
+
+  .ai-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    color: var(--warm-gray);
+    font-size: 0.85rem;
+  }
+
+  .dots span {
+    display: inline-block;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: dot 1.2s ease infinite;
+  }
+  .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes dot {
+    0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
+  }
+
+  .result-desc {
+    font-size: 0.95rem; line-height: 2;
+    color: var(--warm-gray); font-weight: 300;
+    margin-bottom: 1.5rem; text-align: left;
+  }
+
+  .traits {
+    display: flex; gap: 0.6rem;
+    flex-wrap: wrap; justify-content: center; margin-bottom: 3rem;
+  }
+
+  .trait {
+    border: 1px solid var(--light-line);
+    padding: 0.3rem 0.9rem;
+    font-size: 0.75rem; letter-spacing: 0.15em; color: var(--warm-gray);
+  }
+
+  .btn-retry {
+    display: inline-block;
+    border: none; border-bottom: 1px solid var(--warm-gray);
+    padding-bottom: 2px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 0.8rem; letter-spacing: 0.2em;
+    cursor: pointer; background: transparent;
+    color: var(--warm-gray); transition: all 0.3s ease;
+  }
+  .btn-retry:hover { color: var(--ink); border-color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+<div class="container">
+
+  <div id="intro">
+    <div class="logo-line"></div>
+    <h1>测测你的<em>动物</em>人格</h1>
+    <p class="subtitle">Animal Persona · AI 人格测试</p>
+    <p class="intro-desc">十二个问题，AI 为你生成专属分析。<br>没有对错，只有真实。</p>
+    <button class="btn-start" onclick="startQuiz()">开始测试</button>
+  </div>
+
+  <div id="quiz">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+      <span class="progress-label" id="progressLabel">1 / 12</span>
+    </div>
+    <div id="questionBlock" class="question-block"></div>
+  </div>
+
+  <div id="result">
+    <div class="logo-line"></div>
+    <div class="result-animal" id="resultAnimal"></div>
+    <div class="result-type" id="resultType"></div>
+    <div class="result-tag" id="resultTag"></div>
+    <div class="divider"></div>
+
+    <div class="ai-analysis">
+      <span class="ai-label">AI 专属分析</span>
+      <div id="aiContent">
+        <div class="ai-loading">
+          <div class="dots"><span></span><span></span><span></span></div>
+          正在为你生成专属分析…
+        </div>
+      </div>
+    </div>
+
+    <div class="traits" id="resultTraits"></div>
+    <button class="btn-retry" onclick="retry()">重新测试</button>
+  </div>
+
+</div>
+
+<script>
+// ⚠️ 请将下方替换为你的 DeepSeek API Key
+const DEEPSEEK_API_KEY = "sk-f544fbe40aec4b2fb7b55623a8a9bc02";
+
+const questions = [
+  {
+    text: "周末突然空闲，你最想做的是？",
+    options: [
+      { text: "一个人待在家，彻底放空", scores: { owl: 2, cat: 2 } },
+      { text: "约朋友出去探险或聚餐", scores: { wolf: 2, dolphin: 2 } },
+      { text: "研究一个感兴趣的课题", scores: { owl: 2, fox: 1 } },
+      { text: "去户外跑步或运动", scores: { eagle: 2, wolf: 1 } },
+    ]
+  },
+  {
+    text: "面对一个复杂的问题，你通常会？",
+    options: [
+      { text: "先直觉判断，行动再说", scores: { eagle: 2, wolf: 1 } },
+      { text: "慢慢分析，确保万无一失", scores: { owl: 2, fox: 1 } },
+      { text: "问问身边人的看法", scores: { dolphin: 2, wolf: 1 } },
+      { text: "用创意方式找出新路径", scores: { fox: 2, cat: 1 } },
+    ]
+  },
+  {
+    text: "你在团队中通常扮演什么角色？",
+    options: [
+      { text: "带头冲锋的领导者", scores: { eagle: 2, wolf: 1 } },
+      { text: "出谋划策的智囊", scores: { owl: 2, fox: 2 } },
+      { text: "活跃气氛的开心果", scores: { dolphin: 2 } },
+      { text: "默默贡献的执行者", scores: { cat: 2, wolf: 1 } },
+    ]
+  },
+  {
+    text: "别人眼中的你更接近？",
+    options: [
+      { text: "神秘独立，难以捉摸", scores: { cat: 3, fox: 1 } },
+      { text: "智慧沉稳，值得信赖", scores: { owl: 3 } },
+      { text: "热情活泼，充满感染力", scores: { dolphin: 3 } },
+      { text: "果断强势，自带气场", scores: { eagle: 2, wolf: 1 } },
+    ]
+  },
+  {
+    text: "在感情中，你更倾向于？",
+    options: [
+      { text: "给予对方充分的空间", scores: { cat: 2, eagle: 1 } },
+      { text: "深度陪伴，忠诚专一", scores: { wolf: 3 } },
+      { text: "有趣互动，保持新鲜感", scores: { dolphin: 2, fox: 1 } },
+      { text: "理性沟通，减少内耗", scores: { owl: 2, fox: 1 } },
+    ]
+  },
+  {
+    text: "你最害怕的事情是？",
+    options: [
+      { text: "失去自由和掌控感", scores: { eagle: 2, cat: 1 } },
+      { text: "被人孤立或遗弃", scores: { wolf: 2, dolphin: 1 } },
+      { text: "做出错误的决定", scores: { owl: 2 } },
+      { text: "生活变得无聊乏味", scores: { dolphin: 1, fox: 2 } },
+    ]
+  },
+  {
+    text: "选一个最能描述你的词：",
+    options: [
+      { text: "自由", scores: { eagle: 3, cat: 1 } },
+      { text: "智慧", scores: { owl: 3 } },
+      { text: "温暖", scores: { dolphin: 2, wolf: 1 } },
+      { text: "敏锐", scores: { fox: 3 } },
+    ]
+  },
+  {
+    text: "当你遇到不公平的事时？",
+    options: [
+      { text: "当场直接表态", scores: { eagle: 2, wolf: 1 } },
+      { text: "冷静思考再行动", scores: { owl: 2, fox: 1 } },
+      { text: "找朋友倾诉发泄", scores: { dolphin: 2 } },
+      { text: "暗中记住，择机而动", scores: { cat: 2, fox: 2 } },
+    ]
+  },
+  {
+    text: "如果可以选择生活方式，你会？",
+    options: [
+      { text: "在山顶独居，俯瞰世界", scores: { eagle: 3 } },
+      { text: "在书房隐居，博览群书", scores: { owl: 3 } },
+      { text: "在城市中游走，认识各种人", scores: { dolphin: 2, fox: 1 } },
+      { text: "和小团体亲密生活", scores: { wolf: 3 } },
+    ]
+  },
+  {
+    text: "你的社交方式是？",
+    options: [
+      { text: "少而精，只维持深度关系", scores: { cat: 2, wolf: 1 } },
+      { text: "广交朋友，乐于认识新人", scores: { dolphin: 3 } },
+      { text: "选择性社交，看对眼才深交", scores: { fox: 2, owl: 1 } },
+      { text: "独来独往，自给自足", scores: { eagle: 2, cat: 1 } },
+    ]
+  },
+  {
+    text: "你更欣赏哪种能力？",
+    options: [
+      { text: "洞察全局的战略眼光", scores: { eagle: 2, owl: 1 } },
+      { text: "深刻理解复杂事物", scores: { owl: 3 } },
+      { text: "随机应变的适应力", scores: { fox: 2, dolphin: 1 } },
+      { text: "凝聚人心的感召力", scores: { wolf: 2, dolphin: 1 } },
+    ]
+  },
+  {
+    text: "你对未来的态度是？",
+    options: [
+      { text: "精准规划，步步为营", scores: { owl: 2, eagle: 1 } },
+      { text: "顺其自然，活在当下", scores: { cat: 3 } },
+      { text: "充满期待，随时迎接变化", scores: { dolphin: 2, fox: 1 } },
+      { text: "目标明确，全力以赴", scores: { wolf: 2, eagle: 1 } },
+    ]
+  },
+];
+
+const animals = {
+  eagle: { emoji: "🦅", name: "老鹰", tag: "The Eagle · 天空的王者", traits: ["独立", "果断", "有远见", "强烈自我意识", "天生领袖"] },
+  owl:   { emoji: "🦉", name: "猫头鹰", tag: "The Owl · 智慧的守望者", traits: ["深思熟虑", "博学", "内敛", "洞察力强", "追求真相"] },
+  fox:   { emoji: "🦊", name: "狐狸", tag: "The Fox · 聪明的游猎者", traits: ["机智", "创意", "策略性", "神秘感", "适应力强"] },
+  wolf:  { emoji: "🐺", name: "狼", tag: "The Wolf · 忠诚的守护者", traits: ["忠诚", "保护欲", "群体意识", "坚韧", "深情"] },
+  dolphin: { emoji: "🐬", name: "海豚", tag: "The Dolphin · 自由的连接者", traits: ["热情", "共情力", "活泼", "善于沟通", "感染力"] },
+  cat:   { emoji: "🐱", name: "猫", tag: "The Cat · 自由的灵魂", traits: ["独立", "自我", "神秘", "有原则", "内心丰富"] },
+};
+
+let scores = { eagle: 0, owl: 0, fox: 0, wolf: 0, dolphin: 0, cat: 0 };
+let currentQ = 0;
+let answered = [];
+let answerLog = []; // 记录每题的问题和答案，供AI分析
+
+function startQuiz() {
+  document.getElementById('intro').style.display = 'none';
+  const quiz = document.getElementById('quiz');
+  quiz.style.display = 'block';
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[currentQ];
+  const pct = (currentQ / questions.length) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `${currentQ + 1} / ${questions.length}`;
+
+  const block = document.getElementById('questionBlock');
+  block.innerHTML = `
+    <div class="q-number">Question ${String(currentQ + 1).padStart(2, '0')}</div>
+    <div class="q-text">${q.text}</div>
+    <div class="options">
+      ${q.options.map((opt, i) => `
+        <button class="option ${answered[currentQ] === i ? 'selected' : ''}" onclick="selectOption(${i})">
+          <span>${opt.text}</span>
+        </button>
+      `).join('')}
+    </div>
+  `;
+  block.style.animation = 'none';
+  void block.offsetWidth;
+  block.style.animation = 'fadeUp 0.45s ease both';
+}
+
+function selectOption(idx) {
+  const q = questions[currentQ];
+  if (answered[currentQ] !== undefined) {
+    const prev = q.options[answered[currentQ]];
+    for (const [a, v] of Object.entries(prev.scores)) scores[a] -= v;
+  }
+  answered[currentQ] = idx;
+  answerLog[currentQ] = { q: q.text, a: q.options[idx].text };
+  const chosen = q.options[idx];
+  for (const [a, v] of Object.entries(chosen.scores)) scores[a] += v;
+
+  renderQuestion();
+  setTimeout(() => {
+    if (currentQ < questions.length - 1) {
+      currentQ++;
+      renderQuestion();
+    } else {
+      showResult();
+    }
+  }, 380);
+}
+
+async function showResult() {
+  document.getElementById('quiz').style.display = 'none';
+  const result = document.getElementById('result');
+  result.style.display = 'block';
+  result.style.animation = 'fadeUp 0.6s ease both';
+
+  const winner = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+  const a = animals[winner];
+
+  document.getElementById('resultAnimal').textContent = a.emoji;
+  document.getElementById('resultType').textContent = `你是 ${a.name}`;
+  document.getElementById('resultTag').textContent = a.tag;
+  document.getElementById('resultTraits').innerHTML = a.traits.map(t => `<span class="trait">${t}</span>`).join('');
+
+  // 调用 DeepSeek 生成个性化分析
+  await generateAIAnalysis(winner, a.name, answerLog);
+}
+
+async function generateAIAnalysis(animalKey, animalName, log) {
+  const qaText = log.map((item, i) => `Q${i+1}：${item.q}\n我的选择：${item.a}`).join('\n\n');
+
+  const prompt = `你是一位洞察人心的人格分析师。用户完成了一项动物人格测试，结果是「${animalName}」。
+
+以下是用户的所有作答记录：
+${qaText}
+
+请根据用户的具体作答，生成一段200字左右的个性化分析。要求：
+- 结合用户的具体选择，有针对性，不要泛泛而谈
+- 语气温柔、有洞察力，像一位老友在说话
+- 指出一个潜在的成长方向或值得注意的盲点
+- 不要用标题或分段，就是流畅的一段话
+- 用中文回复`;
+
+  try {
+    const res = await fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${DEEPSEEK_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        max_tokens: 400,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content || "分析生成失败，请稍后再试。";
+    document.getElementById('aiContent').innerHTML = `<div class="ai-text">${text}</div>`;
+  } catch (e) {
+    document.getElementById('aiContent').innerHTML = `<div class="ai-text" style="color:var(--warm-gray)">网络错误，无法生成分析。请检查 API Key 或网络连接。</div>`;
+  }
+}
+
+function retry() {
+  scores = { eagle: 0, owl: 0, fox: 0, wolf: 0, dolphin: 0, cat: 0 };
+  currentQ = 0;
+  answered = [];
+  answerLog = [];
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('aiContent').innerHTML = `
+    <div class="ai-loading">
+      <div class="dots"><span></span><span></span><span></span></div>
+      正在为你生成专属分析…
+    </div>`;
+  document.getElementById('intro').style.display = 'block';
+  document.getElementById('intro').style.animation = 'fadeUp 0.5s ease both';
+}
+</script>
+</body>
+  </html>
